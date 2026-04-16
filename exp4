@@ -1,0 +1,85 @@
+"""
+EXPERIMENT 4: Time Series Analysis
+Analyzing data points collected over time
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+print("="*60)
+print("TIME SERIES ANALYSIS")
+print("="*60)
+
+# Generate synthetic time series data (monthly sales)
+np.random.seed(42)
+dates = pd.date_range(start='2020-01-01', end='2023-12-31', freq='M')
+n = len(dates)
+
+# Components of time series
+trend = np.linspace(100, 150, n)  # Upward trend
+seasonal = 20 * np.sin(2 * np.pi * np.arange(n) / 12)  # Yearly seasonality
+noise = np.random.normal(0, 5, n)  # Random noise
+
+# Combine components
+sales = trend + seasonal + noise
+
+# Create DataFrame
+df = pd.DataFrame({'Date': dates, 'Sales': sales})
+df.set_index('Date', inplace=True)
+
+print("Dataset Info:")
+print(df.head(10))
+print(f"\nShape: {df.shape}")
+print(f"\nBasic Statistics:\n{df.describe()}")
+
+# Visualization
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+# Original time series
+axes[0, 0].plot(df.index, df['Sales'], 'b-', linewidth=1)
+axes[0, 0].set_title('Monthly Sales - Original Series')
+axes[0, 0].set_xlabel('Date')
+axes[0, 0].set_ylabel('Sales')
+axes[0, 0].grid(True, alpha=0.3)
+
+# Rolling statistics
+rolling_mean = df['Sales'].rolling(window=12).mean()
+rolling_std = df['Sales'].rolling(window=12).std()
+axes[0, 1].plot(df.index, df['Sales'], 'b-', alpha=0.5, label='Original')
+axes[0, 1].plot(df.index, rolling_mean, 'r-', label='12-month Rolling Mean')
+axes[0, 1].plot(df.index, rolling_std, 'g-', label='12-month Rolling Std')
+axes[0, 1].set_title('Rolling Statistics')
+axes[0, 1].set_xlabel('Date')
+axes[0, 1].set_ylabel('Sales')
+axes[0, 1].legend()
+axes[0, 1].grid(True, alpha=0.3)
+
+# Seasonal decomposition
+decomposition = seasonal_decompose(df['Sales'], model='additive', period=12)
+decomposition.plot(ax=axes[1, 0])
+axes[1, 0].set_title('Seasonal Decomposition')
+
+# ACF and PACF plots
+plot_acf(df['Sales'], lags=24, ax=axes[1, 1])
+axes[1, 1].set_title('Autocorrelation Function (ACF)')
+
+plt.tight_layout()
+plt.show()
+
+# Simple forecasting using moving average
+last_12_months = df['Sales'].tail(12).mean()
+print(f"\nSimple Forecast:")
+print(f"Next month prediction (12-month MA): {last_12_months:.2f}")
+
+# Check stationarity
+from statsmodels.tsa.stattools import adfuller
+result = adfuller(df['Sales'])
+print(f"\nAugmented Dickey-Fuller Test:")
+print(f"  Statistic: {result[0]:.4f}")
+print(f"  p-value: {result[1]:.4f}")
+print(f"  Stationary: {'Yes' if result[1] < 0.05 else 'No'}")
+
+print("\n✓ Time Series Analysis implemented!")
