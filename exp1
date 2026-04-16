@@ -1,0 +1,45 @@
+"""
+EXPERIMENT 1: Introduction to Data Analytics Libraries
+Python: NumPy, Pandas, Matplotlib, Seaborn, Scikit-learn
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn import datasets
+
+print("="*60)
+print("DATA ANALYTICS LIBRARIES IN PYTHON")
+print("="*60)
+
+# NumPy - Numerical computing
+arr = np.array([1, 2, 3, 4, 5])
+print(f"\n1. NumPy: Array = {arr}, Mean = {np.mean(arr):.2f}, Std = {np.std(arr):.2f}")
+
+# Pandas - Data manipulation
+df = pd.DataFrame({
+    'Name': ['Alice', 'Bob', 'Charlie'],
+    'Age': [25, 30, 35],
+    'Salary': [50000, 60000, 70000]
+})
+print(f"\n2. Pandas DataFrame:\n{df}")
+print(f"Summary:\n{df.describe()}")
+
+# Matplotlib/Seaborn - Visualization
+plt.figure(figsize=(10, 4))
+plt.subplot(1, 2, 1)
+plt.plot([1,2,3,4], [1,4,9,16], 'bo-')
+plt.title('Matplotlib Plot')
+plt.subplot(1, 2, 2)
+sns.histplot(np.random.normal(0,1,500), kde=True)
+plt.title('Seaborn Distribution')
+plt.tight_layout()
+plt.show()
+
+# Scikit-learn - ML
+iris = datasets.load_iris()
+print(f"\n3. Scikit-learn: Iris dataset shape = {iris.data.shape}")
+print(f"   Features: {iris.feature_names}")
+
+print("\n✓ Python libraries loaded successfully!")
