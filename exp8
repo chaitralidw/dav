@@ -1,0 +1,166 @@
+"""
+EXPERIMENT 8: Correlation Analysis & Relationships Between Variables
+Using visualizations and correlation analysis for data interpretation
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+print("="*60)
+print("CORRELATION ANALYSIS & RELATIONSHIPS")
+print("="*60)
+
+# Create synthetic dataset
+np.random.seed(42)
+n = 300
+
+df = pd.DataFrame({
+    'Study_Hours': np.random.uniform(1, 15, n),
+    'Sleep_Hours': np.random.uniform(4, 10, n),
+    'Attendance': np.random.uniform(60, 100, n),
+    'Previous_Score': np.random.uniform(40, 95, n),
+    'Exam_Score': np.random.uniform(50, 100, n),
+    'Stress_Level': np.random.uniform(1, 10, n),
+    'Social_Media_Hours': np.random.uniform(0, 8, n)
+})
+
+# Create relationships
+df['Exam_Score'] = (35 + 
+                    df['Study_Hours'] * 3.5 + 
+                    df['Attendance'] * 0.3 + 
+                    df['Previous_Score'] * 0.2 -
+                    df['Social_Media_Hours'] * 1.5 +
+                    np.random.normal(0, 5, n))
+
+df['Stress_Level'] = (2 + 
+                      df['Study_Hours'] * 0.2 +
+                      df['Social_Media_Hours'] * 0.5 -
+                      df['Sleep_Hours'] * 0.3 +
+                      np.random.normal(0, 0.5, n))
+
+# Clip values to realistic ranges
+df['Exam_Score'] = df['Exam_Score'].clip(0, 100)
+df['Stress_Level'] = df['Stress_Level'].clip(1, 10)
+
+print("1. DATASET OVERVIEW")
+print("="*40)
+print(f"Shape: {df.shape}")
+print(f"\nFirst 10 rows:")
+print(df.head(10))
+print(f"\nStatistical Summary:")
+print(df.describe())
+
+print("\n2. CORRELATION MATRIX")
+print("="*40)
+correlation_matrix = df.corr()
+print("Pearson Correlation Coefficients:")
+print(correlation_matrix.round(3))
+
+print("\n3. STRONGEST CORRELATIONS")
+print("="*40)
+# Get upper triangle of correlation matrix
+corr_pairs = correlation_matrix.unstack()
+corr_pairs = corr_pairs[corr_pairs.index.get_level_values(0) != corr_pairs.index.get_level_values(1)]
+corr_pairs = corr_pairs.sort_values(key=abs, ascending=False)
+
+print("Top 5 strongest correlations:")
+for i, ((var1, var2), corr) in enumerate(corr_pairs.head(5).items()):
+    print(f"  {i+1}. {var1} vs {var2}: {corr:.3f}")
+
+# Visualization
+fig = plt.figure(figsize=(18, 12))
+
+# 1. Correlation Heatmap
+plt.subplot(2, 3, 1)
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, 
+            square=True, fmt='.2f', cbar_kws={"shrink": 0.8})
+plt.title('Correlation Heatmap', fontsize=14)
+
+# 2. Scatter plot with regression line
+plt.subplot(2, 3, 2)
+sns.regplot(data=df, x='Study_Hours', y='Exam_Score', scatter_kws={'alpha':0.5})
+plt.title(f'Study Hours vs Exam Score\nCorrelation: {correlation_matrix.loc["Study_Hours", "Exam_Score"]:.3f}')
+plt.xlabel('Study Hours per Day')
+plt.ylabel('Exam Score')
+
+# 3. Scatter plot - Social Media vs Exam Score
+plt.subplot(2, 3, 3)
+sns.regplot(data=df, x='Social_Media_Hours', y='Exam_Score', scatter_kws={'alpha':0.5}, color='red')
+plt.title(f'Social Media vs Exam Score\nCorrelation: {correlation_matrix.loc["Social_Media_Hours", "Exam_Score"]:.3f}')
+plt.xlabel('Social Media Hours per Day')
+plt.ylabel('Exam Score')
+
+# 4. Pairplot for selected variables (simplified version)
+selected_vars = ['Study_Hours', 'Sleep_Hours', 'Exam_Score', 'Stress_Level']
+from scipy import stats
+
+plt.subplot(2, 3, 4)
+sns.scatterplot(data=df, x='Sleep_Hours', y='Stress_Level', hue='Exam_Score', 
+                palette='viridis', alpha=0.6)
+plt.title('Sleep vs Stress (colored by Exam Score)')
+plt.xlabel('Sleep Hours')
+plt.ylabel('Stress Level')
+
+# 5. Multiple variables - Bubble chart
+plt.subplot(2, 3, 5)
+scatter = plt.scatter(df['Study_Hours'], df['Exam_Score'], 
+                      s=df['Attendance']/2, alpha=0.5, c=df['Stress_Level'], 
+                      cmap='RdYlGn_r')
+plt.colorbar(scatter, label='Stress Level')
+plt.xlabel('Study Hours')
+plt.ylabel('Exam Score')
+plt.title('Study Hours vs Exam Score\nBubble size = Attendance, Color = Stress')
+
+# 6. Correlation bar chart
+plt.subplot(2, 3, 6)
+corr_with_target = correlation_matrix['Exam_Score'].drop('Exam_Score').sort_values()
+colors = ['red' if x < 0 else 'green' for x in corr_with_target.values]
+plt.barh(corr_with_target.index, corr_with_target.values, color=colors)
+plt.xlabel('Correlation with Exam Score')
+plt.title('Feature Correlation with Target Variable')
+plt.axvline(x=0, color='black', linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+print("\n4. DETAILED CORRELATION ANALYSIS")
+print("="*40)
+
+# Interpret correlations
+def interpret_correlation(r):
+    if abs(r) >= 0.7:
+        return "Strong"
+    elif abs(r) >= 0.4:
+        return "Moderate"
+    elif abs(r) >= 0.2:
+        return "Weak"
+    else:
+        return "Very Weak"
+
+print("\nInterpretation of correlations with Exam Score:")
+for var in df.columns:
+    if var != 'Exam_Score':
+        corr = correlation_matrix.loc[var, 'Exam_Score']
+        strength = interpret_correlation(corr)
+        direction = "positive" if corr > 0 else "negative"
+        print(f"  {var:20s}: {corr:7.3f} ({strength}, {direction})")
+
+# Multiple regression summary
+from sklearn.linear_model import LinearRegression
+
+X = df[['Study_Hours', 'Sleep_Hours', 'Attendance', 'Previous_Score', 'Social_Media_Hours']]
+y = df['Exam_Score']
+
+model = LinearRegression()
+model.fit(X, y)
+
+print("\n5. MULTIPLE VARIABLE RELATIONSHIP")
+print("="*40)
+print("Linear Regression Coefficients:")
+for feature, coef in zip(X.columns, model.coef_):
+    print(f"  {feature:20s}: {coef:.3f}")
+print(f"  R² Score: {model.score(X, y):.4f}")
+
+print("\n✓ Correlation Analysis completed!")
