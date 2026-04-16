@@ -1,0 +1,203 @@
+"""
+EXPERIMENT 9: Data Analysis with Pandas & NumPy
+Importing, manipulating, summarizing datasets through descriptive statistics
+"""
+
+import numpy as np
+import pandas as pd
+
+print("="*60)
+print("DATA ANALYSIS WITH PANDAS & NUMPY")
+print("="*60)
+
+# Create synthetic sales dataset
+np.random.seed(42)
+n = 1000
+
+df = pd.DataFrame({
+    'Order_ID': [f'ORD-{i:05d}' for i in range(1, n+1)],
+    'Date': pd.date_range('2024-01-01', periods=n, freq='D'),
+    'Product_Category': np.random.choice(['Electronics', 'Clothing', 'Books', 'Home', 'Sports'], n),
+    'Product_Name': np.random.choice(['Laptop', 'Shirt', 'Novel', 'Chair', 'Ball'], n),
+    'Quantity': np.random.randint(1, 10, n),
+    'Unit_Price': np.random.uniform(10, 500, n).round(2),
+    'Customer_Age': np.random.normal(35, 12, n).astype(int),
+    'Customer_City': np.random.choice(['NYC', 'LA', 'Chicago', 'Houston', 'Phoenix'], n),
+    'Payment_Method': np.random.choice(['Credit Card', 'PayPal', 'Cash', 'Debit Card'], n),
+    'Returned': np.random.choice([0, 1], n, p=[0.9, 0.1])
+})
+
+# Add calculated column
+df['Total_Amount'] = (df['Quantity'] * df['Unit_Price']).round(2)
+
+# Add some outliers
+df.loc[np.random.choice(n, 10), 'Total_Amount'] = np.random.uniform(5000, 10000, 10)
+
+# Add some missing values
+df.loc[np.random.choice(n, 30), 'Customer_Age'] = np.nan
+
+print("1. DATA IMPORTING & INITIAL INSPECTION")
+print("="*40)
+print(f"Dataset shape: {df.shape}")
+print(f"\nColumn names: {df.columns.tolist()}")
+print(f"\nData types:\n{df.dtypes}")
+print(f"\nFirst 10 rows:")
+print(df.head(10))
+print(f"\nLast 5 rows:")
+print(df.tail(5))
+
+print("\n2. DATA CLEANING & MANIPULATION")
+print("="*40)
+
+# Check missing values
+print(f"Missing values:\n{df.isnull().sum()}")
+
+# Handle missing values
+df['Customer_Age'].fillna(df['Customer_Age'].median(), inplace=True)
+
+# Remove duplicates
+df.drop_duplicates(subset=['Order_ID'], keep='first', inplace=True)
+
+print(f"After cleaning - Shape: {df.shape}")
+print(f"Missing values after cleaning: {df.isnull().sum().sum()}")
+
+# Add new calculated columns
+df['Discount'] = np.where(df['Total_Amount'] > 1000, df['Total_Amount'] * 0.1, 0)
+df['Final_Amount'] = df['Total_Amount'] - df['Discount']
+
+print(f"\nNew columns added: 'Discount', 'Final_Amount'")
+
+print("\n3. DESCRIPTIVE STATISTICS")
+print("="*40)
+print("Numerical Columns Summary:")
+print(df.describe())
+
+print("\nCategorical Columns Summary:")
+categorical_cols = df.select_dtypes(include=['object']).columns
+for col in categorical_cols:
+    print(f"\n{col} value counts (top 5):")
+    print(df[col].value_counts().head())
+
+print("\n4. GROUPING & AGGREGATION")
+print("="*40)
+
+# Group by Product Category
+category_stats = df.groupby('Product_Category').agg({
+    'Total_Amount': ['sum', 'mean', 'count'],
+    'Quantity': 'sum',
+    'Returned': 'mean'
+}).round(2)
+print("Sales by Product Category:")
+print(category_stats)
+
+# Group by Payment Method
+payment_stats = df.groupby('Payment_Method')['Total_Amount'].agg(['sum', 'mean', 'count'])
+print("\nSales by Payment Method:")
+print(payment_stats)
+
+# Group by multiple columns
+city_category = df.groupby(['Customer_City', 'Product_Category'])['Total_Amount'].sum().unstack()
+print("\nSales by City and Product Category:")
+print(city_category.head())
+
+print("\n5. PIVOT TABLES")
+print("="*40)
+
+# Pivot table - Average sales by category and payment method
+pivot1 = pd.pivot_table(df, values='Total_Amount', 
+                        index='Product_Category', 
+                        columns='Payment_Method', 
+                        aggfunc='mean', fill_value=0)
+print("Average Sales by Category and Payment Method:")
+print(pivot1.round(2))
+
+# Pivot table with multiple aggregations
+pivot2 = pd.pivot_table(df, values='Total_Amount',
+                        index='Customer_City',
+                        columns='Product_Category',
+                        aggfunc=['sum', 'count'],
+                        fill_value=0)
+print("\nSales Summary by City and Category:")
+print(pivot2)
+
+print("\n6. STATISTICAL ANALYSIS WITH NUMPY")
+print("="*40)
+
+# NumPy operations
+total_revenue = np.sum(df['Total_Amount'])
+average_order = np.mean(df['Total_Amount'])
+median_order = np.median(df['Total_Amount'])
+std_order = np.std(df['Total_Amount'])
+
+print(f"Total Revenue: ${total_revenue:,.2f}")
+print(f"Average Order Value: ${average_order:.2f}")
+print(f"Median Order Value: ${median_order:.2f}")
+print(f"Standard Deviation: ${std_order:.2f}")
+
+# Percentiles
+percentiles = np.percentile(df['Total_Amount'], [25, 50, 75, 90, 95])
+print(f"\nOrder Value Percentiles:")
+print(f"  25th: ${percentiles[0]:.2f}")
+print(f"  50th (Median): ${percentiles[1]:.2f}")
+print(f"  75th: ${percentiles[2]:.2f}")
+print(f"  90th: ${percentiles[3]:.2f}")
+print(f"  95th: ${percentiles[4]:.2f}")
+
+print("\n7. FILTERING & QUERYING")
+print("="*40)
+
+# High value orders
+high_value = df[df['Total_Amount'] > 1000]
+print(f"High value orders (>$1000): {len(high_value)} orders")
+print(f"Total from high value orders: ${high_value['Total_Amount'].sum():,.2f}")
+
+# Returns analysis
+returns = df[df['Returned'] == 1]
+print(f"\nReturned orders: {len(returns)} orders")
+print(f"Return rate: {(len(returns)/len(df))*100:.2f}%")
+print(f"Value of returns: ${returns['Total_Amount'].sum():,.2f}")
+
+# Electronics sales
+electronics = df[df['Product_Category'] == 'Electronics']
+print(f"\nElectronics sales: {len(electronics)} orders")
+print(f"Electronics revenue: ${electronics['Total_Amount'].sum():,.2f}")
+
+print("\n8. TIME SERIES ANALYSIS")
+print("="*40)
+
+# Set date as index
+df_time = df.set_index('Date')
+monthly_sales = df_time.resample('M')['Total_Amount'].sum()
+print("Monthly Sales:")
+print(monthly_sales.head())
+
+# Day of week analysis
+df['Day_of_Week'] = pd.to_datetime(df['Date']).dt.day_name()
+daily_sales = df.groupby('Day_of_Week')['Total_Amount'].agg(['sum', 'mean', 'count'])
+print("\nSales by Day of Week:")
+print(daily_sales)
+
+print("\n9. EXPORTING RESULTS")
+print("="="*40)
+print("Summary statistics exported to CSV:")
+summary_df = df.groupby('Product_Category').agg({
+    'Total_Amount': ['sum', 'mean', 'std'],
+    'Quantity': 'sum',
+    'Order_ID': 'count'
+}).round(2)
+print(summary_df)
+
+# Save to CSV (optional - uncomment to save)
+# summary_df.to_csv('sales_summary.csv')
+# df.to_csv('complete_sales_data.csv', index=False)
+
+print("\n10. KEY INSIGHTS")
+print("="*40)
+print(f"📊 Total Orders: {len(df)}")
+print(f"💰 Total Revenue: ${total_revenue:,.2f}")
+print(f"📈 Average Order: ${average_order:.2f}")
+print(f"🏆 Best Category: {category_stats['Total_Amount']['sum'].idxmax()}")
+print(f"💳 Most Used Payment: {payment_stats['count'].idxmax()}")
+print(f"📦 Return Rate: {(len(returns)/len(df))*100:.2f}%")
+
+print("\n✓ Data Analysis with Pandas & NumPy completed!")
