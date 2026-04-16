@@ -1,109 +1,133 @@
-# EXPERIMENT 7: Exploratory Data Analysis (EDA) in R
-# Importing, cleaning, and visualizing data to extract insights
+"""
+EXPERIMENT 7: Exploratory Data Analysis (EDA) in Python
+Importing, cleaning, visualizing data to extract insights
+"""
 
-cat("=", rep("=", 58), "\n", sep="")
-cat("EXPLORATORY DATA ANALYSIS (EDA) IN R\n")
-cat("=", rep("=", 58), "\n", sep="")
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Load built-in dataset or create one
-data(mtcars)
-df <- mtcars
+print("="*60)
+print("EXPLORATORY DATA ANALYSIS (EDA) IN PYTHON")
+print("="*60)
 
-cat("\n1. DATA IMPORT & INITIAL INSPECTION\n")
-cat("-" , rep("-", 40), "\n", sep="")
-cat("Dataset: Motor Trend Car Road Tests\n")
-cat("Dimensions:", dim(df), "\n")
-cat("\nFirst 6 rows:\n")
-print(head(df))
+# Create synthetic dataset
+np.random.seed(42)
+n = 500
 
-cat("\n2. DATA CLEANING & MISSING VALUES\n")
-cat("-" , rep("-", 40), "\n", sep="")
-cat("Missing values summary:\n")
-print(colSums(is.na(df)))
+df = pd.DataFrame({
+    'Age': np.random.normal(35, 10, n).astype(int),
+    'Salary': np.random.normal(50000, 15000, n).astype(int),
+    'Years_Experience': np.random.uniform(0, 30, n).round(1),
+    'Department': np.random.choice(['Sales', 'Marketing', 'IT', 'HR'], n),
+    'City': np.random.choice(['New York', 'LA', 'Chicago', 'Houston'], n),
+    'Rating': np.random.uniform(1, 5, n).round(1),
+    'Left_Company': np.random.choice([0, 1], n, p=[0.8, 0.2])
+})
 
-# Check for duplicates
-cat("\nDuplicate rows:", sum(duplicated(df)), "\n")
+# Introduce some missing values
+df.loc[np.random.choice(n, 20, replace=False), 'Salary'] = np.nan
+df.loc[np.random.choice(n, 15, replace=False), 'Age'] = np.nan
 
-# Data types
-cat("\nData types:\n")
-print(sapply(df, class))
+print("1. INITIAL DATA INSPECTION")
+print("="*40)
+print(f"Dataset shape: {df.shape}")
+print(f"\nFirst 10 rows:")
+print(df.head(10))
+print(f"\nColumn names: {df.columns.tolist()}")
+print(f"\nData types:\n{df.dtypes}")
 
-# Rename columns for clarity
-colnames(df) <- c("MPG", "Cylinders", "Displacement", "Horsepower", 
-                   "RearAxleRatio", "Weight", "QuarterMile", "EngineType",
-                   "Transmission", "Gears", "Carburetors")
+print("\n2. MISSING VALUES ANALYSIS")
+print("="*40)
+print(f"Missing values count:\n{df.isnull().sum()}")
+print(f"\nMissing values percentage:\n{(df.isnull().sum()/len(df))*100}")
 
-cat("\nRenamed columns:\n")
-print(names(df))
+# Handle missing values
+df['Salary'].fillna(df['Salary'].median(), inplace=True)
+df['Age'].fillna(df['Age'].median(), inplace=True)
+print(f"\nAfter cleaning - Missing values: {df.isnull().sum().sum()}")
 
-cat("\n3. DESCRIPTIVE STATISTICS\n")
-cat("-" , rep("-", 40), "\n", sep="")
-cat("Summary statistics:\n")
-print(summary(df))
+print("\n3. DESCRIPTIVE STATISTICS")
+print("="*40)
+print(df.describe())
 
-# Statistics by group
-cat("\nMPG statistics by transmission type (0=auto, 1=manual):\n")
-print(aggregate(MPG ~ Transmission, data = df, FUN = function(x) c(mean=mean(x), sd=sd(x))))
+print("\n4. CATEGORICAL VARIABLES ANALYSIS")
+print("="*40)
+print("\nDepartment distribution:")
+print(df['Department'].value_counts())
+print(f"\nDepartment percentages:\n{df['Department'].value_counts(normalize=True)*100}")
 
-cat("\n4. DATA DISTRIBUTION VISUALIZATION\n")
-cat("-" , rep("-", 40), "\n", sep="")
+print("\nCity distribution:")
+print(df['City'].value_counts())
 
-# Setup plotting area
-par(mfrow = c(2, 3))
+# Visualization
+fig = plt.figure(figsize=(16, 12))
 
 # Histogram
-hist(df$MPG, main = "Histogram of MPG", xlab = "Miles Per Gallon", 
-     col = "lightblue", border = "black", breaks = 10)
+plt.subplot(3, 3, 1)
+plt.hist(df['Age'], bins=20, color='skyblue', edgecolor='black')
+plt.xlabel('Age')
+plt.ylabel('Frequency')
+plt.title('Age Distribution')
 
 # Boxplot
-boxplot(df$MPG ~ df$Cylinders, main = "MPG by Cylinders", 
-        xlab = "Number of Cylinders", ylab = "MPG", 
-        col = c("lightgreen", "lightblue", "pink"))
+plt.subplot(3, 3, 2)
+df.boxplot(column='Salary', by='Department', ax=plt.gca())
+plt.title('Salary by Department')
+plt.xticks(rotation=45)
+
+# Bar chart
+plt.subplot(3, 3, 3)
+dept_counts = df['Department'].value_counts()
+plt.bar(dept_counts.index, dept_counts.values, color=['blue', 'green', 'red', 'orange'])
+plt.xlabel('Department')
+plt.ylabel('Count')
+plt.title('Employee Count by Department')
+
+# Pie chart
+plt.subplot(3, 3, 4)
+city_counts = df['City'].value_counts()
+plt.pie(city_counts.values, labels=city_counts.index, autopct='%1.1f%%')
+plt.title('Employee Distribution by City')
+
+# Violin plot
+plt.subplot(3, 3, 5)
+sns.violinplot(data=df, x='Department', y='Rating', palette='Set2')
+plt.title('Rating Distribution by Department')
+plt.xticks(rotation=45)
+
+# Boxplot for outliers
+plt.subplot(3, 3, 6)
+df.boxplot(column='Years_Experience', by='Left_Company', ax=plt.gca())
+plt.title('Years Experience vs Left Company')
 
 # Density plot
-plot(density(df$MPG), main = "Density Plot of MPG", 
-     xlab = "MPG", col = "blue", lwd = 2)
-polygon(density(df$MPG), col = rgb(0, 0, 1, 0.3))
+plt.subplot(3, 3, 7)
+df['Age'].plot(kind='density', color='blue')
+plt.title('Age Density Plot')
 
-# Bar plot of cylinder counts
-cyl_counts <- table(df$Cylinders)
-barplot(cyl_counts, main = "Car Count by Cylinders", 
-        xlab = "Cylinders", ylab = "Count", col = "lightcoral")
+# Count plot for Left Company
+plt.subplot(3, 3, 8)
+left_counts = df['Left_Company'].value_counts()
+plt.bar(['Stayed', 'Left'], left_counts.values, color=['green', 'red'])
+plt.title('Employee Attrition')
+plt.ylabel('Count')
 
-# Boxplot of Horsepower by Cylinders
-boxplot(df$Horsepower ~ df$Cylinders, main = "Horsepower by Cylinders",
-        xlab = "Cylinders", ylab = "Horsepower", col = "lightyellow")
+# Histogram with KDE
+plt.subplot(3, 3, 9)
+sns.histplot(df['Salary'], kde=True, color='purple')
+plt.title('Salary Distribution with KDE')
 
-# Histogram of Weight
-hist(df$Weight, main = "Histogram of Weight", xlab = "Weight (1000 lbs)",
-     col = "lightpink", border = "black")
+plt.tight_layout()
+plt.show()
 
-cat("\n5. OUTLIER DETECTION\n")
-cat("-" , rep("-", 40), "\n", sep="")
+print("\n5. KEY INSIGHTS")
+print("="*40)
+print(f"Average Age: {df['Age'].mean():.1f} years")
+print(f"Average Salary: ${df['Salary'].mean():,.2f}")
+print(f"Average Years Experience: {df['Years_Experience'].mean():.1f}")
+print(f"Average Rating: {df['Rating'].mean():.2f}")
+print(f"Attrition Rate: {(df['Left_Company'].sum()/len(df))*100:.1f}%")
 
-# Detect outliers using IQR method
-detect_outliers <- function(x) {
-  Q1 <- quantile(x, 0.25)
-  Q3 <- quantile(x, 0.75)
-  IQR <- Q3 - Q1
-  outliers <- which(x < (Q1 - 1.5*IQR) | x > (Q3 + 1.5*IQR))
-  return(outliers)
-}
-
-for(col in c("MPG", "Horsepower", "Weight")) {
-  outliers <- detect_outliers(df[[col]])
-  if(length(outliers) > 0) {
-    cat(col, ": ", length(outliers), "outliers at rows", outliers, "\n")
-  } else {
-    cat(col, ": No outliers detected\n")
-  }
-}
-
-cat("\n6. INSIGHTS & OBSERVATIONS\n")
-cat("-" , rep("-", 40), "\n", sep="")
-cat("- Cars with manual transmission have higher average MPG\n")
-cat("- Higher cylinder count generally leads to lower MPG\n")
-cat("- Weight and horsepower are positively correlated\n")
-cat("- Most cars have 8 cylinders (14 cars), then 4 cylinders (11 cars)\n")
-
-cat("\n✓ EDA in R completed successfully!\n")
+print("\n✓ EDA completed successfully!")
