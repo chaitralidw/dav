@@ -1,0 +1,225 @@
+"""
+EXPERIMENT 10: Data Visualization with Matplotlib & Seaborn
+Creating various visualizations for effective data representation
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+print("="*60)
+print("DATA VISUALIZATION WITH MATPLOTLIB & SEABORN")
+print("="*60)
+
+# Create comprehensive dataset
+np.random.seed(42)
+n = 500
+
+df = pd.DataFrame({
+    'Age': np.random.normal(35, 10, n),
+    'Salary': np.random.normal(55000, 20000, n),
+    'Experience': np.random.uniform(0, 30, n),
+    'Department': np.random.choice(['Sales', 'Marketing', 'IT', 'HR', 'Finance'], n),
+    'Performance_Score': np.random.uniform(1, 5, n),
+    'Satisfaction': np.random.uniform(1, 10, n),
+    'Projects_Completed': np.random.poisson(5, n),
+    'Training_Hours': np.random.exponential(20, n),
+    'Promotion': np.random.choice([0, 1], n, p=[0.85, 0.15])
+})
+
+# Create relationships
+df['Salary'] = (30000 + 
+                df['Experience'] * 1500 + 
+                df['Performance_Score'] * 2000 + 
+                np.random.normal(0, 5000, n))
+
+df['Satisfaction'] = (5 + 
+                      df['Training_Hours'] * 0.05 +
+                      df['Performance_Score'] * 0.3 -
+                      df['Projects_Completed'] * 0.1 +
+                      np.random.normal(0, 0.5, n))
+
+df['Satisfaction'] = df['Satisfaction'].clip(1, 10)
+
+print("Dataset Info:")
+print(f"Shape: {df.shape}")
+print(df.head())
+
+# Create comprehensive visualization dashboard
+fig = plt.figure(figsize=(20, 16))
+
+# 1. Histogram
+plt.subplot(3, 4, 1)
+plt.hist(df['Age'], bins=25, color='skyblue', edgecolor='black', alpha=0.7)
+plt.xlabel('Age')
+plt.ylabel('Frequency')
+plt.title('Histogram: Age Distribution')
+plt.grid(True, alpha=0.3)
+
+# 2. Bar Chart
+plt.subplot(3, 4, 2)
+dept_counts = df['Department'].value_counts()
+plt.bar(dept_counts.index, dept_counts.values, color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'])
+plt.xlabel('Department')
+plt.ylabel('Count')
+plt.title('Bar Chart: Employees by Department')
+plt.xticks(rotation=45)
+plt.grid(True, alpha=0.3, axis='y')
+
+# 3. Pie Chart
+plt.subplot(3, 4, 3)
+promotion_counts = df['Promotion'].value_counts()
+plt.pie(promotion_counts.values, labels=['No Promotion', 'Promotion'], 
+        autopct='%1.1f%%', colors=['lightcoral', 'lightgreen'], explode=(0, 0.05))
+plt.title('Pie Chart: Promotion Distribution')
+
+# 4. Box Plot
+plt.subplot(3, 4, 4)
+sns.boxplot(data=df, x='Department', y='Salary', palette='Set2')
+plt.title('Box Plot: Salary Distribution by Department')
+plt.xticks(rotation=45)
+plt.grid(True, alpha=0.3, axis='y')
+
+# 5. Violin Plot
+plt.subplot(3, 4, 5)
+sns.violinplot(data=df, x='Department', y='Performance_Score', palette='muted')
+plt.title('Violin Plot: Performance Score by Department')
+plt.xticks(rotation=45)
+plt.grid(True, alpha=0.3, axis='y')
+
+# 6. Regression Plot
+plt.subplot(3, 4, 6)
+sns.regplot(data=df, x='Experience', y='Salary', scatter_kws={'alpha':0.4}, 
+            line_kws={'color': 'red', 'lw': 2})
+plt.title('Regression Plot: Experience vs Salary')
+plt.xlabel('Years of Experience')
+plt.ylabel('Salary ($)')
+plt.grid(True, alpha=0.3)
+
+# 7. Scatter Plot with Hue
+plt.subplot(3, 4, 7)
+scatter = plt.scatter(df['Experience'], df['Performance_Score'], 
+                      c=df['Satisfaction'], cmap='viridis', alpha=0.6, s=50)
+plt.colorbar(scatter, label='Satisfaction')
+plt.xlabel('Experience (Years)')
+plt.ylabel('Performance Score')
+plt.title('Scatter Plot: Experience vs Performance\nColor = Satisfaction')
+plt.grid(True, alpha=0.3)
+
+# 8. Heatmap
+plt.subplot(3, 4, 8)
+correlation = df[['Age', 'Salary', 'Experience', 'Performance_Score', 
+                  'Satisfaction', 'Projects_Completed', 'Training_Hours']].corr()
+sns.heatmap(correlation, annot=True, cmap='coolwarm', center=0, 
+            square=True, fmt='.2f', cbar_kws={"shrink": 0.8})
+plt.title('Heatmap: Correlation Matrix')
+
+# 9. Count Plot
+plt.subplot(3, 4, 9)
+sns.countplot(data=df, x='Promotion', hue='Department', palette='Set1')
+plt.title('Count Plot: Promotions by Department')
+plt.xlabel('Promotion Received')
+plt.ylabel('Count')
+plt.xticks([0, 1], ['No', 'Yes'])
+
+# 10. KDE Plot
+plt.subplot(3, 4, 10)
+for dept in df['Department'].unique():
+    subset = df[df['Department'] == dept]
+    sns.kdeplot(subset['Salary'], label=dept, linewidth=2)
+plt.xlabel('Salary')
+plt.ylabel('Density')
+plt.title('KDE Plot: Salary Distribution by Department')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+# 11. Joint Plot (using subplot, but jointplot is separate)
+plt.subplot(3, 4, 11)
+sns.scatterplot(data=df, x='Training_Hours', y='Performance_Score', 
+                hue='Department', alpha=0.6, s=60)
+plt.title('Training Hours vs Performance Score')
+plt.xlabel('Training Hours')
+plt.ylabel('Performance Score')
+plt.grid(True, alpha=0.3)
+
+# 12. Boxen Plot (for large distributions)
+plt.subplot(3, 4, 12)
+sns.boxenplot(data=df, x='Department', y='Projects_Completed', palette='pastel')
+plt.title('Boxen Plot: Projects by Department')
+plt.xticks(rotation=45)
+plt.grid(True, alpha=0.3, axis='y')
+
+plt.suptitle('COMPREHENSIVE DATA VISUALIZATION DASHBOARD', fontsize=16, fontweight='bold')
+plt.tight_layout()
+plt.show()
+
+# Additional advanced visualizations
+fig2, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+# Pairplot (simplified version using subplots)
+selected_features = ['Age', 'Salary', 'Performance_Score', 'Satisfaction']
+for i, feature1 in enumerate(selected_features):
+    for j, feature2 in enumerate(selected_features):
+        if i < j:
+            axes[0, 0].scatter(df[feature1], df[feature2], alpha=0.5)
+            axes[0, 0].set_xlabel(feature1)
+            axes[0, 0].set_ylabel(feature2)
+axes[0, 0].set_title('Scatter Plot Matrix (Sample)')
+axes[0, 0].grid(True, alpha=0.3)
+
+# Catplot style - Bar plot with error bars
+dept_perf = df.groupby('Department')['Performance_Score'].agg(['mean', 'std'])
+axes[0, 1].bar(dept_perf.index, dept_perf['mean'], yerr=dept_perf['std'], 
+               capsize=5, color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'])
+axes[0, 1].set_xlabel('Department')
+axes[0, 1].set_ylabel('Average Performance Score')
+axes[0, 1].set_title('Performance Score by Department (with Error Bars)')
+axes[0, 1].grid(True, alpha=0.3, axis='y')
+
+# Area chart
+monthly_data = pd.DataFrame({
+    'Month': range(1, 13),
+    'Sales': np.random.randint(100, 300, 12),
+    'Marketing': np.random.randint(50, 150, 12),
+    'IT': np.random.randint(80, 200, 12)
+})
+axes[1, 0].stackplot(monthly_data['Month'], 
+                     monthly_data['Sales'], monthly_data['Marketing'], monthly_data['IT'],
+                     labels=['Sales', 'Marketing', 'IT'], alpha=0.7)
+axes[1, 0].set_xlabel('Month')
+axes[1, 0].set_ylabel('Revenue')
+axes[1, 0].set_title('Area Chart: Monthly Revenue by Department')
+axes[1, 0].legend(loc='upper left')
+axes[1, 0].grid(True, alpha=0.3)
+
+# Violin + Swarm plot combined
+sns.violinplot(data=df, x='Department', y='Satisfaction', palette='Set3', ax=axes[1, 1])
+sns.swarmplot(data=df, x='Department', y='Satisfaction', color='black', alpha=0.5, ax=axes[1, 1])
+axes[1, 1].set_title('Violin + Swarm Plot: Satisfaction Distribution')
+axes[1, 1].set_xticklabels(axes[1, 1].get_xticklabels(), rotation=45)
+axes[1, 1].grid(True, alpha=0.3, axis='y')
+
+plt.suptitle('ADVANCED VISUALIZATIONS', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.show()
+
+print("\n" + "="*60)
+print("VISUALIZATION SUMMARY")
+print("="*40)
+print("Created visualizations:")
+print("  ✓ Histogram - Age distribution")
+print("  ✓ Bar Chart - Department counts")
+print("  ✓ Pie Chart - Promotion distribution")
+print("  ✓ Box Plot - Salary by department")
+print("  ✓ Violin Plot - Performance by department")
+print("  ✓ Regression Plot - Experience vs Salary")
+print("  ✓ Scatter Plot - Experience vs Performance")
+print("  ✓ Heatmap - Correlation matrix")
+print("  ✓ Count Plot - Promotions by department")
+print("  ✓ KDE Plot - Salary distribution")
+print("  ✓ Boxen Plot - Projects by department")
+print("  ✓ Stacked Area Chart - Monthly revenue")
+print("  ✓ Violin + Swarm plot - Satisfaction")
+
+print("\n✓ All visualizations created successfully!")
