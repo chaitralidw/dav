@@ -1,0 +1,95 @@
+"""
+EXPERIMENT 3: Multiple Linear Regression
+Multiple independent variables predicting a dependent variable
+"""
+
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+
+print("="*60)
+print("MULTIPLE LINEAR REGRESSION")
+print("="*60)
+
+# Generate data: House price prediction
+np.random.seed(42)
+n = 200
+size = np.random.uniform(500, 5000, n)  # Square feet
+bedrooms = np.random.randint(1, 6, n)   # Number of bedrooms
+age = np.random.uniform(0, 50, n)       # Age of house
+location_score = np.random.uniform(1, 10, n)  # Location quality
+
+# Price = base + coefficients * features + noise
+price = (50000 + 
+         size * 100 + 
+         bedrooms * 15000 - 
+         age * 500 + 
+         location_score * 10000 +
+         np.random.normal(0, 20000, n))
+
+# Create DataFrame
+df = pd.DataFrame({
+    'Size_sqft': size,
+    'Bedrooms': bedrooms,
+    'Age_years': age,
+    'Location_Score': location_score,
+    'Price': price
+})
+
+print("Dataset Info:")
+print(df.head(10))
+print(f"\nShape: {df.shape}")
+print(f"\nCorrelation with Price:\n{df.corr()['Price'].sort_values(ascending=False)}")
+
+# Prepare features and target
+X = df[['Size_sqft', 'Bedrooms', 'Age_years', 'Location_Score']]
+y = df['Price']
+
+# Split
+split = int(0.8 * n)
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
+
+# Train model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Predictions
+y_pred = model.predict(X_test)
+
+# Results
+print("\n" + "="*60)
+print("MODEL RESULTS")
+print("="*60)
+print(f"Intercept: ${model.intercept_:,.2f}")
+print("\nCoefficients:")
+for feature, coef in zip(X.columns, model.coef_):
+    print(f"  {feature}: ${coef:,.2f}")
+
+print(f"\nR² Score: {r2_score(y_test, y_pred):.4f}")
+
+# Feature importance
+importance = pd.DataFrame({
+    'Feature': X.columns,
+    'Coefficient': model.coef_
+}).sort_values('Coefficient', ascending=False)
+print("\nFeature Importance (by coefficient):")
+print(importance)
+
+# Prediction function
+def predict_price(size, bedrooms, age, location):
+    features = np.array([[size, bedrooms, age, location]])
+    return model.predict(features)[0]
+
+print("\nSample Predictions:")
+test_cases = [
+    (2000, 3, 10, 7),
+    (1500, 2, 5, 5),
+    (3500, 4, 20, 9),
+]
+for size, beds, age, loc in test_cases:
+    pred = predict_price(size, beds, age, loc)
+    print(f"  {size} sqft, {beds} beds, {age} yrs, loc {loc} → ${pred:,.2f}")
+
+print("\n✓ Multiple Linear Regression implemented!")
