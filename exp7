@@ -1,0 +1,109 @@
+# EXPERIMENT 7: Exploratory Data Analysis (EDA) in R
+# Importing, cleaning, and visualizing data to extract insights
+
+cat("=", rep("=", 58), "\n", sep="")
+cat("EXPLORATORY DATA ANALYSIS (EDA) IN R\n")
+cat("=", rep("=", 58), "\n", sep="")
+
+# Load built-in dataset or create one
+data(mtcars)
+df <- mtcars
+
+cat("\n1. DATA IMPORT & INITIAL INSPECTION\n")
+cat("-" , rep("-", 40), "\n", sep="")
+cat("Dataset: Motor Trend Car Road Tests\n")
+cat("Dimensions:", dim(df), "\n")
+cat("\nFirst 6 rows:\n")
+print(head(df))
+
+cat("\n2. DATA CLEANING & MISSING VALUES\n")
+cat("-" , rep("-", 40), "\n", sep="")
+cat("Missing values summary:\n")
+print(colSums(is.na(df)))
+
+# Check for duplicates
+cat("\nDuplicate rows:", sum(duplicated(df)), "\n")
+
+# Data types
+cat("\nData types:\n")
+print(sapply(df, class))
+
+# Rename columns for clarity
+colnames(df) <- c("MPG", "Cylinders", "Displacement", "Horsepower", 
+                   "RearAxleRatio", "Weight", "QuarterMile", "EngineType",
+                   "Transmission", "Gears", "Carburetors")
+
+cat("\nRenamed columns:\n")
+print(names(df))
+
+cat("\n3. DESCRIPTIVE STATISTICS\n")
+cat("-" , rep("-", 40), "\n", sep="")
+cat("Summary statistics:\n")
+print(summary(df))
+
+# Statistics by group
+cat("\nMPG statistics by transmission type (0=auto, 1=manual):\n")
+print(aggregate(MPG ~ Transmission, data = df, FUN = function(x) c(mean=mean(x), sd=sd(x))))
+
+cat("\n4. DATA DISTRIBUTION VISUALIZATION\n")
+cat("-" , rep("-", 40), "\n", sep="")
+
+# Setup plotting area
+par(mfrow = c(2, 3))
+
+# Histogram
+hist(df$MPG, main = "Histogram of MPG", xlab = "Miles Per Gallon", 
+     col = "lightblue", border = "black", breaks = 10)
+
+# Boxplot
+boxplot(df$MPG ~ df$Cylinders, main = "MPG by Cylinders", 
+        xlab = "Number of Cylinders", ylab = "MPG", 
+        col = c("lightgreen", "lightblue", "pink"))
+
+# Density plot
+plot(density(df$MPG), main = "Density Plot of MPG", 
+     xlab = "MPG", col = "blue", lwd = 2)
+polygon(density(df$MPG), col = rgb(0, 0, 1, 0.3))
+
+# Bar plot of cylinder counts
+cyl_counts <- table(df$Cylinders)
+barplot(cyl_counts, main = "Car Count by Cylinders", 
+        xlab = "Cylinders", ylab = "Count", col = "lightcoral")
+
+# Boxplot of Horsepower by Cylinders
+boxplot(df$Horsepower ~ df$Cylinders, main = "Horsepower by Cylinders",
+        xlab = "Cylinders", ylab = "Horsepower", col = "lightyellow")
+
+# Histogram of Weight
+hist(df$Weight, main = "Histogram of Weight", xlab = "Weight (1000 lbs)",
+     col = "lightpink", border = "black")
+
+cat("\n5. OUTLIER DETECTION\n")
+cat("-" , rep("-", 40), "\n", sep="")
+
+# Detect outliers using IQR method
+detect_outliers <- function(x) {
+  Q1 <- quantile(x, 0.25)
+  Q3 <- quantile(x, 0.75)
+  IQR <- Q3 - Q1
+  outliers <- which(x < (Q1 - 1.5*IQR) | x > (Q3 + 1.5*IQR))
+  return(outliers)
+}
+
+for(col in c("MPG", "Horsepower", "Weight")) {
+  outliers <- detect_outliers(df[[col]])
+  if(length(outliers) > 0) {
+    cat(col, ": ", length(outliers), "outliers at rows", outliers, "\n")
+  } else {
+    cat(col, ": No outliers detected\n")
+  }
+}
+
+cat("\n6. INSIGHTS & OBSERVATIONS\n")
+cat("-" , rep("-", 40), "\n", sep="")
+cat("- Cars with manual transmission have higher average MPG\n")
+cat("- Higher cylinder count generally leads to lower MPG\n")
+cat("- Weight and horsepower are positively correlated\n")
+cat("- Most cars have 8 cylinders (14 cars), then 4 cylinders (11 cars)\n")
+
+cat("\n✓ EDA in R completed successfully!\n")
